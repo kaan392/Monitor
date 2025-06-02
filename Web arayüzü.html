@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<title>PC Durum Takip</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
+  body {
+    background: #121212;
+    color: #eee;
+    font-family: 'Roboto', sans-serif;
+    max-width: 600px;
+    margin: 20px auto;
+    padding: 20px;
+  }
+  h2 {
+    text-align: center;
+    margin-bottom: 25px;
+  }
+  .card {
+    background: #1e1e1e;
+    border-radius: 10px;
+    padding: 15px 25px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+  }
+  canvas {
+    display: block;
+    margin: 0 auto;
+  }
+  .uptime {
+    font-size: 1.2em;
+    text-align: center;
+    margin-top: 10px;
+    color: #76ff03;
+  }
+</style>
+</head>
+<body>
+
+<h2>PC Durum Takip</h2>
+
+<div class="card">
+  <canvas id="cpuChart" width="400" height="150"></canvas>
+</div>
+
+<div class="card">
+  <canvas id="ramChart" width="400" height="150"></canvas>
+</div>
+
+<div class="card uptime" id="uptime">Yükleniyor...</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const cpuCtx = document.getElementById('cpuChart').getContext('2d');
+const ramCtx = document.getElementById('ramChart').getContext('2d');
+
+const cpuChart = new Chart(cpuCtx, {
+    type: 'line',
+    data: {
+        labels: [],
+        datasets: [{
+            label: 'CPU Kullanımı (%)',
+            data: [],
+            borderColor: '#ff6384',
+            backgroundColor: 'rgba(255,99,132,0.2)',
+            fill: true,
+            tension: 0.3,
+        }]
+    },
+    options: {
+        animation: false,
+        scales: {
+          y: {min: 0, max: 100, ticks: {stepSize: 20}},
+          x: {display: false}
+        }
+    }
+});
+
+const ramChart = new Chart(ramCtx, {
+    type: 'line',
+    data: {
+        labels: [],
+        datasets: [{
+            label: 'RAM Kullanımı (MB)',
+            data: [],
+            borderColor: '#36a2eb',
+            backgroundColor: 'rgba(54,162,235,0.2)',
+            fill: true,
+            tension: 0.3,
+        }]
+    },
+    options: {
+        animation: false,
+        scales: {
+          y: {beginAtZero: true},
+          x: {display: false}
+        }
+    }
+});
+
+function formatUptime(seconds) {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    return `${h} saat ${m} dakika`;
+}
+
+async function fetchStats() {
+    try {
+        const res = await fetch('stats.json?cache=' + Date.now());
+        if (!res.ok) throw new Error('Dosya bulunamadı');
+        const data = await res.json();
+
+        const timeLabel = new Date(data.timestamp).toLocaleTimeString();
+
+        // CPU Chart
+        if(cpuChart.data.labels.length > 20) {
+            cpuChart.data.labels.shift();
+            cpuChart.data.datasets[0].data.shift();
+        }
+        cpuChart.data.labels.push(timeLabel);
+        cpuChart.data.datasets[0].data.push(data.cpu_percent);
+        cpuChart.update();
+
+        // RAM Chart
+        if(ramChart.data.labels.length > 20) {
+            ramChart.data.labels.shift();
+            ramChart.data.datasets[0].data.shift();
+        }
+        ramChart.data.labels.push(timeLabel);
+        ramChart.data.datasets[0].data.push(data.ram_used);
+        ramChart.update();
+
+        // Uptime
+        document.getElementById('uptime').textContent = 
+          `Çalışma Süresi: ${formatUptime(data.uptime_sec)}`;
+
+    } catch(e) {
+        document.getElementById('uptime').textContent = 'Veri alınamadı.';
+    }
+}
+
+fetchStats();
+setInterval(fetchStats, 10000);
+</script>
+
+</body>
+</html>
