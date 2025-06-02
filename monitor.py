@@ -17,4 +17,4 @@ while True:
     stats = get_stats()
     with open("stats.json", "w") as f:
         json.dump(stats, f, indent=2)
-    time.sleep(2)  # Her 2 saniyede bir günceller
+    time.sleep(1)  # Her 2 saniyede bir günceller
