@@ -5,7 +5,7 @@ from datetime import datetime
 
 def get_stats():
     data = {
-        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "timestamp": datetime.now().strftime("/ %Y-%m-%d %H:%M:%S"),
         "cpu_percent": psutil.cpu_percent(interval=1),
         "ram_used": psutil.virtual_memory().used // (1024 * 1024),
         "ram_total": psutil.virtual_memory().total // (1024 * 1024),
